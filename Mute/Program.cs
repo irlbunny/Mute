@@ -116,20 +116,26 @@ namespace Mute
                 Console.WriteLine($"Recognized: {e.Result.Text}");
 
                 var isStartKeyword = false;
-                if (Configuration.KeywordsType == "Contains")
-                    isStartKeyword = Configuration.KeywordsStart.Where(x => e.Result.Text.ToUpper().Contains(x.ToUpper())).Count() != 0;
-                else if (Configuration.KeywordsType == "StartsWith")
-                    isStartKeyword = Configuration.KeywordsStart.Where(x => e.Result.Text.ToUpper().StartsWith(x.ToUpper())).Count() != 0;
-                else if (Configuration.KeywordsType == "EndsWith")
-                    isStartKeyword = Configuration.KeywordsStart.Where(x => e.Result.Text.ToUpper().EndsWith(x.ToUpper())).Count() != 0;
-
                 var isPauseKeyword = false;
-                if (Configuration.KeywordsType == "Contains")
-                    isPauseKeyword = Configuration.KeywordsPause.Where(x => e.Result.Text.ToUpper().Contains(x.ToUpper())).Count() != 0;
-                else if (Configuration.KeywordsType == "StartsWith")
-                    isPauseKeyword = Configuration.KeywordsPause.Where(x => e.Result.Text.ToUpper().StartsWith(x.ToUpper())).Count() != 0;
-                else if (Configuration.KeywordsType == "EndsWith")
-                    isPauseKeyword = Configuration.KeywordsPause.Where(x => e.Result.Text.ToUpper().EndsWith(x.ToUpper())).Count() != 0;
+
+                if (Configuration.KeywordsEnabled)
+                {
+                    if (Configuration.KeywordsType == "Contains")
+                    {
+                        isStartKeyword = Configuration.KeywordsStart.Where(x => e.Result.Text.ToUpper().Contains(x.ToUpper())).Count() != 0;
+                        isPauseKeyword = Configuration.KeywordsPause.Where(x => e.Result.Text.ToUpper().Contains(x.ToUpper())).Count() != 0;
+                    }
+                    else if (Configuration.KeywordsType == "StartsWith")
+                    {
+                        isStartKeyword = Configuration.KeywordsStart.Where(x => e.Result.Text.ToUpper().StartsWith(x.ToUpper())).Count() != 0;
+                        isPauseKeyword = Configuration.KeywordsPause.Where(x => e.Result.Text.ToUpper().StartsWith(x.ToUpper())).Count() != 0;
+                    }
+                    else if (Configuration.KeywordsType == "EndsWith")
+                    {
+                        isStartKeyword = Configuration.KeywordsStart.Where(x => e.Result.Text.ToUpper().EndsWith(x.ToUpper())).Count() != 0;
+                        isPauseKeyword = Configuration.KeywordsPause.Where(x => e.Result.Text.ToUpper().EndsWith(x.ToUpper())).Count() != 0;
+                    }
+                }
 
                 if (isPauseKeyword && !isStartKeyword && !_disabled)
                 {
