@@ -19,6 +19,8 @@ namespace Mute
         private static Timer _clear;
         private static bool _disabled;
 
+        private static TaskCompletionSource<int> _stopRecognition = new();
+
         public static void Main(string[] args)
             => MainAsync(args)
                 .ConfigureAwait(false)
@@ -69,30 +71,6 @@ namespace Mute
 
             _synthesizer.SelectVoice(voice);
 
-            SpeechConfig config;
-            if (Configuration.SpeechUseAuthToken)
-            {
-                if (!string.IsNullOrEmpty(Configuration.SpeechAuthToken) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
-                    config = SpeechConfig.FromAuthorizationToken(Configuration.SpeechAuthToken, Configuration.SpeechRegion);
-                else
-                    config = CreateConfigFromResources();
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(Configuration.SpeechSubscriptionKey) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
-                    config = SpeechConfig.FromSubscription(Configuration.SpeechSubscriptionKey, Configuration.SpeechRegion);
-                else
-                    config = CreateConfigFromResources();
-            }
-            
-            if (Configuration.SpeechDictation)
-                config.EnableDictation();
-
-            config.SpeechRecognitionLanguage = Configuration.SpeechLanguage;
-
-            config.SetProperty(PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "5000");
-            config.SetProperty(PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "5000");
-
             if (Configuration.SpeechLogging)
                 File.WriteAllText(Configuration.LatestPath, string.Empty);
 
@@ -100,14 +78,50 @@ namespace Mute
             _clear.Elapsed += (s, e) => File.WriteAllText(Configuration.LatestPath, string.Empty);
             _clear.AutoReset = false;
 
-            var recognizer = new SpeechRecognizer(config, AudioConfig.FromDefaultMicrophoneInput());
-            recognizer.Recognized += OnRecognized;
+            while (true)
+            {
+                SpeechConfig config;
+                if (Configuration.SpeechUseAuthToken)
+                {
+                    if (!string.IsNullOrEmpty(Configuration.SpeechAuthToken) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
+                        config = SpeechConfig.FromAuthorizationToken(Configuration.SpeechAuthToken, Configuration.SpeechRegion);
+                    else
+                        config = CreateConfigFromResources();
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(Configuration.SpeechSubscriptionKey) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
+                        config = SpeechConfig.FromSubscription(Configuration.SpeechSubscriptionKey, Configuration.SpeechRegion);
+                    else
+                        config = CreateConfigFromResources();
+                }
 
-            Console.WriteLine("Now listening, start talking and your voice will be converted from Speech-To-Text-To-Speech!");
+                if (Configuration.SpeechDictation)
+                    config.EnableDictation();
 
-            await recognizer.StartContinuousRecognitionAsync();
-            await Task.Delay(-1);
+                config.SpeechRecognitionLanguage = Configuration.SpeechLanguage;
+
+                config.SetProperty(PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "5000");
+                config.SetProperty(PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "5000");
+
+                using (var recognizer = new SpeechRecognizer(config, AudioConfig.FromDefaultMicrophoneInput()))
+                {
+                    recognizer.Canceled += OnCanceled;
+                    recognizer.Recognized += OnRecognized;
+
+                    Console.WriteLine("Now listening, start talking and your voice will be converted from Speech-To-Text-To-Speech!");
+
+                    await recognizer.StartContinuousRecognitionAsync();
+                    Task.WaitAny(new[] { _stopRecognition.Task });
+                    await recognizer.StopContinuousRecognitionAsync();
+                }
+
+                _stopRecognition = new();
+            }
         }
+
+        private static void OnCanceled(object sender, SpeechRecognitionCanceledEventArgs e)
+            => _stopRecognition.TrySetResult(0);
 
         private static void OnRecognized(object sender, SpeechRecognitionEventArgs e)
         {
