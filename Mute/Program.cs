@@ -157,9 +157,6 @@ namespace Mute
                     _disabled = true;
                 }
 
-                if (!_disabled && Configuration.SynthesizerEnabled)
-                    Speak(e.Result.Text);
-
                 if (!_disabled && Configuration.SpeechLogging)
                 {
                     File.AppendAllText(Configuration.LogPath, $"{e.Result.Text}\n");
@@ -168,6 +165,9 @@ namespace Mute
                     _clear.Stop();
                     _clear.Start();
                 }
+
+                if (!_disabled && Configuration.SynthesizerEnabled)
+                    Speak(e.Result.Text);
 
                 if (isStartKeyword && !isPauseKeyword && _disabled)
                 {
