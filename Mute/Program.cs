@@ -52,6 +52,8 @@ namespace Mute
 
         public static async Task MainAsync(string[] args)
         {
+            Console.WriteLine("Like my work? Feel free to donate to support more developments: https://www.patreon.com/ItsKaitlyn03");
+
             Console.WriteLine("Outputs:");
             var devices = WaveOutDevice.EnumerateDevices();
             foreach (var device in devices)
