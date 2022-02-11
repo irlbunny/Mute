@@ -44,11 +44,13 @@ namespace Mute
             }
         }
 
+#if PRIVATE_BUILD
         private static SpeechConfig CreateConfigFromResources()
         {
             var resources = TokenFetcher.GetResources();
             return SpeechConfig.FromAuthorizationToken(resources.Token, resources.Region);
         }
+#endif
 
         public static async Task MainAsync(string[] args)
         {
@@ -82,20 +84,30 @@ namespace Mute
 
             while (true)
             {
-                SpeechConfig config;
+                SpeechConfig config = null;
                 if (Configuration.SpeechUseAuthToken)
                 {
                     if (!string.IsNullOrEmpty(Configuration.SpeechAuthToken) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
                         config = SpeechConfig.FromAuthorizationToken(Configuration.SpeechAuthToken, Configuration.SpeechRegion);
+#if PRIVATE_BUILD
                     else
                         config = CreateConfigFromResources();
+#endif
                 }
                 else
                 {
                     if (!string.IsNullOrEmpty(Configuration.SpeechSubscriptionKey) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
                         config = SpeechConfig.FromSubscription(Configuration.SpeechSubscriptionKey, Configuration.SpeechRegion);
+#if PRIVATE_BUILD
                     else
                         config = CreateConfigFromResources();
+#endif
+                }
+
+                if (config == null)
+                {
+                    Console.WriteLine("Config is null.");
+                    return;
                 }
 
                 if (Configuration.SpeechDictation)
