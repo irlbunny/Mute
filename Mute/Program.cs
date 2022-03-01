@@ -3,7 +3,6 @@ using CSCore.MediaFoundation;
 using CSCore.SoundOut;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
-using Mute.Providers;
 using System;
 using System.IO;
 using System.Linq;
@@ -44,14 +43,6 @@ namespace Mute
             }
         }
 
-#if PRIVATE_BUILD
-        private static SpeechConfig CreateConfigFromResources()
-        {
-            var resources = TokenFetcher.GetResources();
-            return SpeechConfig.FromAuthorizationToken(resources.Token, resources.Region);
-        }
-#endif
-
         public static async Task MainAsync(string[] args)
         {
             Console.WriteLine("Like my work? Feel free to donate to support more developments: https://www.patreon.com/ItsKaitlyn03");
@@ -89,19 +80,11 @@ namespace Mute
                 {
                     if (!string.IsNullOrEmpty(Configuration.SpeechAuthToken) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
                         config = SpeechConfig.FromAuthorizationToken(Configuration.SpeechAuthToken, Configuration.SpeechRegion);
-#if PRIVATE_BUILD
-                    else
-                        config = CreateConfigFromResources();
-#endif
                 }
                 else
                 {
                     if (!string.IsNullOrEmpty(Configuration.SpeechSubscriptionKey) && !string.IsNullOrEmpty(Configuration.SpeechRegion))
                         config = SpeechConfig.FromSubscription(Configuration.SpeechSubscriptionKey, Configuration.SpeechRegion);
-#if PRIVATE_BUILD
-                    else
-                        config = CreateConfigFromResources();
-#endif
                 }
 
                 if (config == null)
